@@ -429,7 +429,11 @@ def update_target(action, db_address=_SNEX2_DB):
             ### Get the name of the target
             with get_session(db_address=_SNEX1_DB) as db_session:
                 name_query = db_session.query(Target_Names).filter(Target_Names.targetid==target_row.id).first()
-                t_name = name_query.name
+                if name_query is not None:
+                    t_name = name_query.name
+                else:
+                    ### No name found, so target was created and deleted without being synced
+                    continue
                 db_session.commit()
 
             with get_session(db_address=db_address) as db_session:
