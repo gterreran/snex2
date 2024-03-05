@@ -468,24 +468,36 @@ def update_target(action, db_address=_SNEX2_DB):
             if action!='delete':
                 n_id = name_row.targetid
                 t_name = name_row.name
+                
+                with get_session(db_address=_SNEX1_DB) as db_session:
+                    standard_list = db_session.query(Targets).filter(Targets.classificationid==1)
+                    standard_ids = [x.id for x in standard_list]
 
-            with get_session(db_address=db_address) as db_session:
-                targetname_criteria = and_(Targetname.name==t_name, Targetname.target_id==n_id)
-                #targetname_criteria = Targetname.target_id == n_id # Update the row in the targetname table that has the same targetid as the targetid in the targetnames table
-                if action=='update':
-                    db_session.query(Target).filter(Target.id==n_id).update({'name': t_name})
-                    db_session.query(Targetname).filter(targetname_criteria).update({'name': t_name})
+                if n_id not in standard_ids:
 
-                elif action=='insert':
-                    existing_name = db_session.query(Targetname).filter(Targetname.name==t_name, Targetname.target_id==n_id).first()
-                    if not existing_name:
-                        db_session.add(Targetname(name=t_name, target_id=n_id, created=datetime.datetime.utcnow(), modified=datetime.datetime.utcnow()))
+                    with get_session(db_address=db_address) as db_session:
+                        targetname_criteria = and_(Targetname.name==t_name, Targetname.target_id==n_id)
+                        if action=='update':
+                            db_session.query(Target).filter(Target.id==n_id).update({'name': t_name})
+                            db_session.query(Targetname).filter(targetname_criteria).update({'name': t_name})
 
-                #elif action=='delete': #Currently doesn't work, need to fix?
-                #    name_delete = db_session.query(Targetname).filter(targetname_criteria).first()
-                #    db_session.delete(name_delete)
+                        elif action=='insert':
+                            existing_name = db_session.query(Targetname).filter(Targetname.name==t_name, Targetname.target_id==n_id).first()
+                            if not existing_name:
+                                db_session.add(Targetname(name=t_name, target_id=n_id, created=datetime.datetime.utcnow(), modified=datetime.datetime.utcnow()))
 
-                db_session.commit()
+                    db_session.commit()
+            
+            #TODO: Delete currently doesn't work because targetname_criteria doesn't work
+            #      need to figure out how to find the name that was deleted from SNEx1
+
+            #elif action=='delete': 
+            #    with get_session(db_address=db_address) as db_session:
+            #        targetname_criteria = and_(Targetname.name==t_name, Targetname.target_id==n_id)
+            #        name_delete = db_session.query(Targetname).filter(targetname_criteria).first()
+            #        db_session.delete(name_delete)
+            #    db_session.commit()
+
             delete_row(Db_Changes, nresult.id, db_address=_SNEX1_DB)
         
         except:
