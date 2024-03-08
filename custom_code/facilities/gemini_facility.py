@@ -39,24 +39,53 @@ def get_site_code_from_program(program_id):
 
 class OpticalImagingForm(BaseObservationForm):
 
+    north_south_choice = (
+        ('north', 'North'),
+        ('south', 'South'),
+    )
+    n_or_s = forms.ChoiceField(choices=north_south_choice, initial='north', widget=forms.Select(), required=True,
+                             label='')
+
     window_size = forms.FloatField(initial=1.0, min_value=0.0, label='')
     max_airmass = forms.FloatField(min_value=1.0, max_value=5.0, initial=1.6, label='')
 
     # Optical imaging
-    optical_phot_exptime_choices = (
-        (0, 0.0),
-        (100, 100.0),
-        (200, 200.0),
-        (300, 300.0),
-        (450, 450.0),
-        (600, 600.0),
-        (900, 900.0),
+#    optical_phot_exptime_choices = (
+#        (0, 0.0),
+#        (100, 100.0),
+#        (200, 200.0),
+#        (300, 300.0),
+#        (450, 450.0),
+#        (600, 600.0),
+#        (900, 900.0),
+#    )
+#
+#    g_exptime = forms.ChoiceField(choices=optical_phot_exptime_choices, initial=0, widget=forms.Select(), required=True, label='')
+#    r_exptime = forms.ChoiceField(choices=optical_phot_exptime_choices, initial=0, widget=forms.Select(), required=True, label='')
+#    i_exptime = forms.ChoiceField(choices=optical_phot_exptime_choices, initial=0, widget=forms.Select(), required=True, label='')
+#    z_exptime = forms.ChoiceField(choices=optical_phot_exptime_choices, initial=0, widget=forms.Select(), required=True, label='')
+    
+    g_exptime = forms.FloatField(initial=0.0, min_value=0.0,
+        required=True, label='')
+    r_exptime = forms.FloatField(initial=0.0, min_value=0.0,
+        required=True, label='')
+    i_exptime = forms.FloatField(initial=0.0, min_value=0.0,
+        required=True, label='')
+    z_exptime = forms.FloatField(initial=0.0, min_value=0.0,
+        required=True, label='')
+        
+    filter_choices = (
+        ('U','U'),
+        ('B','B'),
+        ('g','g'),
+        ('V','V'),
+        ('r','r'),
+        ('i','i'),
     )
 
-    g_exptime = forms.ChoiceField(choices=optical_phot_exptime_choices, initial=0, widget=forms.Select(), required=True, label='')
-    r_exptime = forms.ChoiceField(choices=optical_phot_exptime_choices, initial=0, widget=forms.Select(), required=True, label='')
-    i_exptime = forms.ChoiceField(choices=optical_phot_exptime_choices, initial=0, widget=forms.Select(), required=True, label='')
-    z_exptime = forms.ChoiceField(choices=optical_phot_exptime_choices, initial=0, widget=forms.Select(), required=True, label='')
+    mag_approx = forms.FloatField(initial=18.0, min_value=0.0, label='')
+    mag_approx_filter = forms.ChoiceField(choices=filter_choices, initial='g', widget=forms.Select(), required=True,
+                                    label='')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -71,6 +100,12 @@ class OpticalImagingForm(BaseObservationForm):
                         ),
                         PrependedText(
                             'max_airmass', 'Airmass <'
+                        ),
+                        Div(
+                            Div(PrependedText('mag_approx', 'Approximate mag: '),css_class='col-md-8'),
+                            Div(HTML('<p style="text-align:center;">Filter:</p>'),css_class='col-md-2'),
+                            Div('mag_approx_filter', css_class='col-md-2'),
+                            css_class='form-row'
                         ),
                         Div(
                           Div(HTML('<p style="text-align:center;">Filter</p>'),css_class='col-md-2'),
@@ -92,6 +127,13 @@ class OpticalImagingForm(BaseObservationForm):
                           Div(HTML('<p style="text-align:center;">z</p>'),css_class='col-md-2'),
                           Div('z_exptime',css_class='col-md-10'), css_class='form-row'
                         ),
+                        Div(
+                            Div(HTML('<p style="text-align:center;">Status</p>'), css_class='col-md-12'),
+                            css_class='form-row',
+                        ),
+                        Div(
+                            Div('ready', css_class='col-md-12'), css_class='form-row'
+                        ),
                     ), css_class='col-md-8'
                 ), css_class='row justify-content-md-center'
               )
@@ -108,13 +150,21 @@ class OpticalImagingForm(BaseObservationForm):
 
     def _init_observation_payload(self, target):
 
-        wait = True #On Hold
+        #wait = True #On Hold
         coords = SkyCoord(ra=target.ra*u.degree, dec=target.dec*u.degree)
         now = datetime.utcnow()
         sn_name = target.name
+        
+        if self.data['n_or_s'] == 'north':
+            prog = os.getenv('GEMINI_NORTH_PROGRAMID')
+            pwd = os.getenv('GEMINI_NORTH_PASSWORD')
+        elif self.data['n_or_s'] == 'south':
+            prog = os.getenv('GEMINI_SOUTH_PROGRAMID')
+            pwd = os.getenv('GEMINI_SOUTH_PASSWORD')
 
         payload = {
-            'ready': str(not wait).lower(),
+            #'ready': str(not wait).lower(),
+            'ready': self.data['ready'],
             'prog': os.getenv('GEMINI_PROGRAMID',''),
             'email': os.getenv('GEMINI_EMAIL',''),
             'password': os.getenv('GEMINI_PASSWORD',''),
@@ -128,7 +178,7 @@ class OpticalImagingForm(BaseObservationForm):
             'elevationType': 'airmass',
             'elevationMin': 1.0,
             'elevationMax': str(self.data['max_airmass']).strip(),
-            'note': 'API Test',
+            'note': 'This observation was submitted through the API, if anything is unusual contact cmccully@lco.global',
             'posangle': 90.
         }
 
@@ -174,12 +224,12 @@ class OpticalSpectraForm(BaseObservationForm):
     window_size = forms.FloatField(initial=1.0, min_value=0.0, label='')
     max_airmass = forms.FloatField(min_value=1.0, max_value=5.0, initial=1.6, label='')
 
-    optical_spec_exptime_choices = (
-        (0, 0.0),
-        (1200, 1200.0),
-        (1500, 1500.0),
-        (1700, 1700.0),
-    )
+#    optical_spec_exptime_choices = (
+#        (0, 0.0),
+#        (1200, 1200.0),
+#        (1500, 1500.0),
+#        (1700, 1700.0),
+#    )
 
     optical_spec_slit_choices = (
         (1, '1.0"'),
@@ -248,7 +298,7 @@ class OpticalSpectraForm(BaseObservationForm):
                             css_class='form-row',
                         ),
                         Div(
-                            Div(HTML('<p style="text-align:center;">B600/500nm</p>'), css_class='col-md-4'),
+                            Div(HTML('<p style="text-align:center;">B480/500nm</p>'), css_class='col-md-4'),
                             Div('b_exptime', css_class='col-md-8'), css_class='form-row'
                         ),
                         Div(
@@ -283,7 +333,7 @@ class OpticalSpectraForm(BaseObservationForm):
         return not errors
 
     def _init_observation_payload(self, target):
-        wait = True #On Hold
+        #wait = True #On Hold
         coords = SkyCoord(ra=target.ra*u.degree, dec=target.dec*u.degree)
         now = datetime.utcnow()
         sn_name = target.name
@@ -324,55 +374,75 @@ class OpticalSpectraForm(BaseObservationForm):
         if self.data['n_or_s'] == 'north':
             if self.data['slit'] == '1.5':
                 obsid_map = {
-                    'B600': {
-                        'arc': '68',
-                        'acquisition': '66',
-                        'science_with_flats': '67',
+#                    'B600': {
+#                        'arc': '68',
+#                        'acquisition': '66',
+#                        'science_with_flats': '67',
+#                    },
+                    'B480': {
+                        'arc': '104',
+                        'acquisition': '102',
+                        'science_with_flats': '103',
                     },
                     'R400': {
-                        'arc': '74',
-                        'acquisition': '72',
-                        'science_with_flats': '73',
+                        'arc': '110',
+                        'acquisition': '108',
+                        'science_with_flats': '109',
                     }
                 }
             elif self.data['slit'] == '1':
                 obsid_map = {
-                    'B600': {
-                        'arc': '65',
-                        'acquisition': '63',
-                        'science_with_flats': '64',
+#                    'B600': {
+#                        'arc': '65',
+#                        'acquisition': '63',
+#                        'science_with_flats': '64',
+#                    },
+                    'B480': {
+                        'arc': '101',
+                        'acquisition': '99',
+                        'science_with_flats': '100',
                     },
                     'R400': {
-                        'arc': '71',
-                        'acquisition': '69',
-                        'science_with_flats': '70',
+                        'arc': '107',
+                        'acquisition': '105',
+                        'science_with_flats': '106',
                     }
                 }
         elif self.data['n_or_s'] == 'south':
             if self.data['slit'] == '1.5':
                 obsid_map = {
                     'B600': {
-                        'arc': '64',
-                        'acquisition': '65',
-                        'science_with_flats': '66',
+                        'arc': '56',
+                        'acquisition': '57',
+                        'science_with_flats': '58',
+                    },
+                    'B480': {
+                        'arc': '93',
+                        'acquisition': '94',
+                        'science_with_flats': '95',
                     },
                     'R400': {
-                        'arc': '70',
-                        'acquisition': '71',
-                        'science_with_flats': '72',
+                        'arc': '62',
+                        'acquisition': '63',
+                        'science_with_flats': '64',
                     }
                 }
             elif self.data['slit'] == '1':
                 obsid_map = {
                     'B600': {
-                        'arc': '61',
-                        'acquisition': '62',
-                        'science_with_flats': '63',
+                        'arc': '53',
+                        'acquisition': '54',
+                        'science_with_flats': '55',
+                    },
+                    'B480': {
+                        'arc': '90',
+                        'acquisition': '91',
+                        'science_with_flats': '92',
                     },
                     'R400': {
-                        'arc': '67',
-                        'acquisition': '68',
-                        'science_with_flats': '69',
+                        'arc': '59',
+                        'acquisition': '60',
+                        'science_with_flats': '61',
                     }
                 }
 
@@ -395,7 +465,7 @@ class OpticalSpectraForm(BaseObservationForm):
                     payloads[f'{color_grating}_{key}']['target'] = 'Acquisition'
                 elif key == 'science_with_flats':
                     payloads[f'{color_grating}_{key}']['target'] = target.name
-                    if color_grating == 'B600':
+                    if color_grating in ['B600', 'B480']:
                         payloads[f'{color_grating}_{key}']['exptime'] = int(float(self.data['b_exptime'])/2)
                     elif color_grating == 'R400':
                         payloads[f'{color_grating}_{key}']['exptime'] = int(float(self.data['r_exptime'])/2)
