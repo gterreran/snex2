@@ -11,8 +11,8 @@ services:
         volumes:
             - ${SNEX2_DB_DATA_PATH}:/var/lib/postgresql/data
         ports:
-            - 5435:5432/tcp
-        platform: linux/amd64
+            - 5435:5432
+        #platform: linux/amd64
     snex2:
         image: lcogt/snex2:latest
         network_mode: bridge
@@ -28,8 +28,8 @@ services:
                 max-size: "10m"
         environment:
             - DB_NAME=snex2
-            - DB_HOST=snex2-db
-            - DB_PORT=5432
+            - SNEX2_DB_HOST=snex2-db
+            - SNEX2_DB_PORT=5432
             - SNEX2_USER=${SNEX2_USER}
             - SNEX2_DB_USER=${SNEX2_DB_USER}
             - SNEX2_DB_PASSWORD=${SNEX2_DB_PASSWORD}
@@ -90,8 +90,8 @@ services:
                 max-size: "10m"
         environment:
             - DB_NAME=snex2-dev
-            - DB_HOST=snex2-db
-            - DB_PORT=5432
+            - SNEX2_DB_HOST=snex2-db
+            - SNEX2_DB_PORT=5432
             - SNEX2_USER=${SNEX2_USER}
             - SNEX2_DB_USER=${SNEX2_DB_USER}
             - SNEX2_DB_PASSWORD=${SNEX2_DB_PASSWORD}
