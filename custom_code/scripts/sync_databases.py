@@ -346,7 +346,7 @@ def update_spec(action, db_address=_SNEX2_DB):
 
                 targetid = spec_row.targetid
                 time = '{} {}'.format(spec_row.dateobs, spec_row.ut) 
-                spec = read_spec(spec_row.filepath + spec_row.filename.replace('.fits', '.ascii'))
+                spec = read_spec(spec_row.filepath.replace('/supernova/', '/snex2/') + spec_row.filename.replace('.fits', '.ascii'))
                 spec_groupid = spec_row.groupidcode
     
                 with get_session(db_address=settings.SNEX1_DB_URL) as db_session:
