@@ -941,8 +941,9 @@ def observation_summary(context, target=None, time='previous'):
             instrument_dict = {'2M0-FLOYDS-SCICAM': 'Floyds',
                                '1M0-SCICAM-SINISTRO': 'Sinistro',
                                '2M0-SCICAM-MUSCAT': 'Muscat',
-                               '2M0-SPECTRAL-AG': 'Spectra',
-                               '0M4-SCICAM-SBIG': 'SBIG'
+                               '2M0-SPECTRAL-AG': 'Spectral',
+                               '0M4-SCICAM-SBIG': 'SBIG',
+                               '0M4-SCICAM-QHY600': 'QHY',
             }
 
             if parameter.get('instrument_type') in instrument_dict.keys():
@@ -1071,6 +1072,8 @@ def get_scheduling_form(observation, user_id, start, requested_str, case='notpen
             instrument = 'Muscat'
         elif '1M' in parameter.get('instrument_type', ''):
             instrument = 'Sinistro'
+        elif 'QHY' in parameter.get('instrument_type', ''):
+            instrument = 'QHY'
         else:
             instrument = 'SBIG'
 

@@ -12,7 +12,7 @@ class GWGalaxyObservationForm(forms.Form):
     observation_mode = forms.ChoiceField(choices=(('NORMAL', 'Normal'), ('RAPID_RESPONSE', 'Rapid-Response'), ('TIME_CRITICAL', 'Time-Critical')), label='Observation Mode', initial=('RAPID_RESPONSE', 'Rapid-Response'))
     filters = forms.CharField(initial='g,i', label='Filters')
     instrument_type = forms.ChoiceField(
-            choices=(('0M4-SCICAM-SBIG', '0.4 meter SBIG'), 
+            choices=(('0M4-SCICAM-QHY600', '0.4 meter QHY'), 
                      ('1M0-SCICAM-SINISTRO', '1.0 meter Sinistro'), 
                      ('2M0-SCICAM-SPECTRAL', '2.0 meter Spectral')
             ), initial=('1M0-SCICAM-SINISTRO', '1.0 meter Sinistro'),

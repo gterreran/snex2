@@ -114,13 +114,19 @@ def get_snex2_params(obs, repeating=True):
                        'muscat': "2M0-SCICAM-MUSCAT",
                        'spectral': '2M0-SPECTRAL-AG',
                        'sbig': '0M4-SCICAM-SBIG',
-                       'sbig0m4': '0M4-SCICAM-SBIG'}
+                       'sbig0m4': '0M4-SCICAM-SBIG',
+                       'qhy': '0M4-SCICAM-QHY600'
+                       }
+
     obs_type_dict = {'floyds': 'SPECTRA',
                      'sinistro': 'IMAGING',
                      'muscat': 'IMAGING',
                      'spectral': 'IMAGING',
                      'sbig': 'IMAGING',
-                     'sbig0m4': 'IMAGING'}
+                     'sbig0m4': 'IMAGING',
+                     'qhy': 'IMAGING'
+                     }
+
     filt_dict = {'g': 'gp',
                  'r': 'rp',
                  'i': 'ip',

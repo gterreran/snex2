@@ -56,7 +56,8 @@ class SnexPhotometricSequenceForm(LCOPhotometricSequenceForm):
                                  initial=1.0)
     
     # Rewrite a lot of the form fields to have unique IDs between photometry and spectroscopy
-    filters = ['U', 'B', 'V', 'R', 'I', 'u', 'gp', 'rp', 'ip', 'zs', 'w']
+    valid_instruments = ['1M0-SCICAM-SINISTRO', '0M4-SCICAM-QHY600']
+    filters = ['U', 'B', 'V', 'R', 'I', 'up', 'gp', 'rp', 'ip', 'zs', 'w']
     max_airmass = forms.FloatField(initial=1.6, min_value=0, label='Max Airmass')
     min_lunar_distance = forms.IntegerField(min_value=0, label='Minimum Lunar Distance', initial=20, required=False)
     cadence_frequency = forms.FloatField(required=True, min_value=0.0, initial=3.0, label='')
@@ -311,13 +312,16 @@ class SnexPhotometricSequenceForm(LCOPhotometricSequenceForm):
             instrument_config = []
             for filter_name in self.filters:
                 if len(self.cleaned_data[filter_name]) > 0:
-                    instrument_config.append({
-                        'exposure_count': self.cleaned_data[filter_name][1],
-                        'exposure_time': self.cleaned_data[filter_name][0],
-                        'optical_elements': {
-                            'filter': filter_name
-                        }
-                    })
+                    if filter_name in ['U', 'R', 'I'] and self.cleaned_data['instrument_type'] == '0M4-SCICAM-QHY600':
+                        continue
+                    if self.cleaned_data[filter_name][0] > 0:
+                        instrument_config.append({
+                            'exposure_count': self.cleaned_data[filter_name][1],
+                            'exposure_time': self.cleaned_data[filter_name][0],
+                            'optical_elements': {
+                                'filter': filter_name
+                            }
+                        })
 
             return instrument_config
 

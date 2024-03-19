@@ -329,7 +329,10 @@ def sync_observation_with_snex1(snex_id, params, requestgroup_id, wrapped_sessio
     _snex1_address = 'mysql://{}:{}@supernova.science.lco.global:3306/supernova?charset=utf8&use_unicode=1'.format(os.environ['SNEX1_DB_USER'], os.environ['SNEX1_DB_PASSWORD'])
     instrument_dict = {'2M0-FLOYDS-SCICAM': 'floyds',
                        '1M0-SCICAM-SINISTRO': 'sinistro',
-                       '2M0-SCICAM-MUSCAT': 'muscat'}
+                       '2M0-SCICAM-MUSCAT': 'muscat',
+                       '0M4-SCICAM-SBIG': 'sbig0m4',
+                       '0M4-SCICAM-QHY600': 'qhy',
+                       }
 
     if wrapped_session:
         db_session = wrapped_session
@@ -423,7 +426,9 @@ def sync_sequence_with_snex1(params, group_names, userid=67, comment=False, targ
     instrument_dict = {'2M0-FLOYDS-SCICAM': 'floyds',
                        '1M0-SCICAM-SINISTRO': 'sinistro',
                        '2M0-SCICAM-MUSCAT': 'muscat',
-                       '0M4-SCICAM-SBIG': 'sbig0m4'}
+                       '0M4-SCICAM-SBIG': 'sbig0m4',
+                       '0M4-SCICAM-QHY600': 'qhy',
+                       }
 
     if wrapped_session:
         db_session = wrapped_session
