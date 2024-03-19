@@ -469,7 +469,7 @@ def update_target(action, db_address=_SNEX2_DB):
                 n_id = name_row.targetid
                 t_name = name_row.name
                 
-                with get_session(db_address=_SNEX1_DB) as db_session:
+                with get_session(db_address=settings.SNEX1_DB_URL) as db_session:
                     standard_list = db_session.query(Targets).filter(Targets.classificationid==1)
                     standard_ids = [x.id for x in standard_list]
 
