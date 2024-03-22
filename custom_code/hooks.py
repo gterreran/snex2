@@ -95,8 +95,8 @@ def _get_tns_params(target):
     if not tns_name:
         return {'status': 'No TNS name'}
 
-    api_key = os.environ['TNS_APIKEY']
-    tns_id = os.environ['TNS_APIID']
+    api_key = os.getenv('TNS_APIKEY','')
+    tns_id = os.getenv('TNS_APIID','')
 
     tns_url = 'https://www.wis-tns.org/api/get/object'
     json_list = [('objname',tns_name), ('objid',''), ('photometry','1'), ('spectra','0')]
@@ -813,7 +813,7 @@ def get_unreduced_spectra(allspec=True):
     '''
     Hook to find unreduced spectra for FLOYDS inbox
     '''
-    token = os.environ['LCO_APIKEY']
+    token = os.getenv('LCO_APIKEY','')
 
     response = requests.get('https://observe.lco.global/api/proposals?active=True&limit=50/',
                              headers={'Authorization': 'Token ' + token}).json()
