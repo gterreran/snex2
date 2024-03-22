@@ -7,15 +7,8 @@ from ..custom_code.views import cancel_observation, Snex1ConnectionError
 from ..custom_code.hooks import _return_session, _load_table
 from tom_observations.models import ObservationRecord
 import logging
-<<<<<<< HEAD
-from django.conf import settings
-=======
-<<<<<<< Updated upstream
-=======
 from django.conf import settings
 import survey_queries
->>>>>>> Stashed changes
->>>>>>> 2cdcce4 (Added functionlity to automatically fetch templates to be subtracted)
 
 
 logger = logging.getLogger(__name__)
