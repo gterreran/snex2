@@ -109,6 +109,9 @@ venv.bak/
 src/
 custom_code/brokers/queries/queries.json
 gw/gw_config.ini
+<<<<<<< HEAD
 
 db_data
+=======
+>>>>>>> 2cdcce4 (Added functionlity to automatically fetch templates to be subtracted)
 galaxy_database

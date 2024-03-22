@@ -1,12 +1,21 @@
 import os
-from gw.models import GWFollowupGalaxies
+from models import GWFollowupGalaxy
 from tom_common.hooks import run_hook
 from tom_targets.models import Target, TargetExtra
 from tom_nonlocalizedevents.models import EventSequence
-from custom_code.views import cancel_observation, Snex1ConnectionError
-from custom_code.hooks import _return_session, _load_table
+from ..custom_code.views import cancel_observation, Snex1ConnectionError
+from ..custom_code.hooks import _return_session, _load_table
+from tom_observations.models import ObservationRecord
 import logging
+<<<<<<< HEAD
 from django.conf import settings
+=======
+<<<<<<< Updated upstream
+=======
+from django.conf import settings
+import survey_queries
+>>>>>>> Stashed changes
+>>>>>>> 2cdcce4 (Added functionlity to automatically fetch templates to be subtracted)
 
 
 logger = logging.getLogger(__name__)
@@ -23,7 +32,7 @@ def cancel_gw_obs(galaxy_ids=[], sequence_id=None, wrapped_session=None):
         return
 
     if galaxy_ids:
-        galaxies = GWFollowupGalaxies.objects.filter(id__in=galaxy_ids)
+        galaxies = GWFollowupGalaxy.objects.filter(id__in=galaxy_ids)
 
     elif sequence_id:
         sequence = EventSequence.objects.get(id=sequence_id)
@@ -76,9 +85,9 @@ def ingest_gw_galaxy_into_snex1(target_id, event_id, wrapped_session=None):
         db_session = wrapped_session
 
     else:
-        db_session = _return_session(_snex1_address)
+        db_session = _return_session(settings.SNEX1_DB_URL)
 
-    o4_galaxies = _load_table('o4_galaxies', db_address=_snex1_address)
+    o4_galaxies = _load_table('o4_galaxies', db_address=settings.SNEX1_DB_URL)
 
     existing_target = db_session.query(o4_galaxies).filter(o4_galaxies.targetid==target_id)
     if existing_target.count() > 0:
@@ -101,7 +110,13 @@ def ingest_gw_galaxy_into_snex1(target_id, event_id, wrapped_session=None):
         ra0 = snex2_target.ra
         dec0 = snex2_target.dec
 
-        db_session.add(o4_galaxies(targetid=target_id, event_id=event_id, ra0=ra0, dec0=dec0))
+        templ = survey_queries.survey_request(ra0, dec0, 'gri')
+        templ.search_for_PS1_urls()
+        templ.search_for_Skymapper_urls()
+        templ.search_for_DECam_urls()
+        templ.fetch_urls()
+
+        db_session.add(o4_galaxies(targetid=target_id, event_id=event_id, ra0=ra0, dec0=dec0, **templ.templates_paths))
 
     if not wrapped_session:
         try:
