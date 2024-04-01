@@ -314,7 +314,7 @@ class SnexPhotometricSequenceForm(LCOPhotometricSequenceForm):
                 if len(self.cleaned_data[filter_name]) > 0:
                     if filter_name in ['U', 'R', 'I'] and self.cleaned_data['instrument_type'] == '0M4-SCICAM-QHY600':
                         continue
-                    if self.cleaned_data[filter_name][0] > 0:
+                    if self.cleaned_data[filter_name][0] > 0 and self.cleaned_data[filter_name][1] > 0:
                         instrument_config.append({
                             'exposure_count': self.cleaned_data[filter_name][1],
                             'exposure_time': self.cleaned_data[filter_name][0],
