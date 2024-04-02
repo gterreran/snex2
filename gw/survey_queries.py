@@ -9,9 +9,10 @@ from astropy import units as u
 import urllib.request, io
 from numpy.core.defchararray import startswith
 from pyvo.dal import sia
+import os
 
 #Folder definitions
-OUT_FOLDER = '/Users/giacomoterreran/GW_templates/O4' #folder where images will be stored
+OUT_FOLDER = os.getenv('GWTEMPLATES_FOLDER')
 #OUT_FOLDER = '/supernova/data/extdata/GW_templates/O4'
 
 #PS1 urls
