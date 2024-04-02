@@ -21,7 +21,8 @@ PS1_CUT = 'https://ps1images.stsci.edu/cgi-bin/fitscut.cgi'
 
 #List of available services at:
 #https://datalab.noirlab.edu/docs/manual/UsingAstroDataLab/DataAccessInterfaces/SimpleImageAccessSIA/SimpleImageAccessSIA.html
-COLLECTION = 'coadd_all'
+#COLLECTION = 'coadd_all'
+COLLECTION = 'ls_dr9'
 DECAM_SERVICE = f'https://datalab.noirlab.edu/sia/{COLLECTION}'
 
 #Skymapper urls
