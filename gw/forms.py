@@ -14,7 +14,7 @@ class GWGalaxyObservationForm(forms.Form):
     instrument_type = forms.ChoiceField(
             choices=(('0M4-SCICAM-QHY600', '0.4 meter QHY'), 
                      ('1M0-SCICAM-SINISTRO', '1.0 meter Sinistro'), 
-                     ('2M0-SCICAM-SPECTRAL', '2.0 meter Spectral')
+                     ('2M0-SCICAM-MUSCAT', '2.0 meter Muscat')
             ), initial=('1M0-SCICAM-SINISTRO', '1.0 meter Sinistro'),
             label='Instrument'
     )

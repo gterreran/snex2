@@ -11,7 +11,7 @@ import numpy as np
 import sep
 import logging
 
-from tom_targets.models import TargetExtra
+from tom_targets.models import TargetExtra, Target
 from tom_common.hooks import run_hook
 
 logger = logging.getLogger(__name__)
@@ -166,12 +166,25 @@ def event_info(sequence):
     return {'sequence': sequence, 'localization': sequence.localization}
 
 
-@register.filter
-def has_images(galaxy):
+def get_target_from_galaxy(galaxy):
     targetextralink = TargetExtra.objects.filter(key='gwfollowupgalaxy_id', value=galaxy.id)
     if not targetextralink:
+        targ_query = Target.objects.filter(name=galaxy.catalog_objname)
+        if not targ_query:
+            return False
+        return targ_query.first()
+    return targetextralink.first().target    
+
+
+@register.filter
+def has_images(galaxy):
+    # targetextralink = TargetExtra.objects.filter(key='gwfollowupgalaxy_id', value=galaxy.id)
+    # if not targetextralink:
+    #     return False
+    # targ = targetextralink.first().target
+    targ = get_target_from_galaxy(galaxy)
+    if not targ:
         return False
-    targ = targetextralink.first().target
     try:
         filepaths, filenames, dates, teles, filters, exptimes, psfxs, psfys = run_hook('find_images_from_snex1', targ.id)
     except:
@@ -185,9 +198,11 @@ def has_images(galaxy):
 
 @register.filter
 def get_target_id(galaxy):
-    targetextralink = TargetExtra.objects.filter(key='gwfollowupgalaxy_id', value=galaxy.id)
-    if not targetextralink:
+    # targetextralink = TargetExtra.objects.filter(key='gwfollowupgalaxy_id', value=galaxy.id)
+    # if not targetextralink:
+    #     return None
+    # targ = targetextralink.first().target
+    targ = get_target_from_galaxy(galaxy)
+    if not targ:
         return None
-    targ = targetextralink.first().target
-    
     return targ.id

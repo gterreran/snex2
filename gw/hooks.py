@@ -1,5 +1,5 @@
 import os
-from gw.models import GWFollowupGalaxies
+from gw.models import GWFollowupGalaxy
 from tom_common.hooks import run_hook
 from tom_targets.models import Target, TargetExtra
 from tom_nonlocalizedevents.models import EventSequence
@@ -23,7 +23,7 @@ def cancel_gw_obs(galaxy_ids=[], sequence_id=None, wrapped_session=None):
         return
 
     if galaxy_ids:
-        galaxies = GWFollowupGalaxies.objects.filter(id__in=galaxy_ids)
+        galaxies = GWFollowupGalaxy.objects.filter(id__in=galaxy_ids)
 
     elif sequence_id:
         sequence = EventSequence.objects.get(id=sequence_id)
@@ -76,9 +76,9 @@ def ingest_gw_galaxy_into_snex1(target_id, event_id, wrapped_session=None):
         db_session = wrapped_session
 
     else:
-        db_session = _return_session(_snex1_address)
+        db_session = _return_session(settings.SNEX1_DB_URL)
 
-    o4_galaxies = _load_table('o4_galaxies', db_address=_snex1_address)
+    o4_galaxies = _load_table('o4_galaxies', db_address=settings.SNEX1_DB_URL)
 
     existing_target = db_session.query(o4_galaxies).filter(o4_galaxies.targetid==target_id)
     if existing_target.count() > 0:
