@@ -127,6 +127,10 @@ def get_snex2_params(obs, repeating=True):
                  'r': 'rp',
                  'i': 'ip',
                  'z': 'zs'}
+    
+    priority_dict = {'normal': 'NORMAL',
+                     'time_critical': 'TIME_CRITICAL',
+                     'immediate_too': 'RAPID_RESPONSE'}
             
     obs_dict = obs.__dict__
     obs_dict.pop('_sa_instance_state')
@@ -151,7 +155,8 @@ def get_snex2_params(obs, repeating=True):
     except:
         snex2_param['min_lunar_distance'] = 20.0
     try:
-        snex2_param['observation_mode'] = obs_dict['priority'].upper()
+        #snex2_param['observation_mode'] = obs_dict['priority'].upper()
+        snex2_param['observation_mode'] = priority_dict.get(obs_dict['priority'], 'NORMAL')
     except:
         snex2_param['observation_mode'] = 'NORMAL'
     try:

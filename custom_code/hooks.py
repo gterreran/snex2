@@ -23,6 +23,18 @@ from collections import OrderedDict
 
 logger = logging.getLogger(__name__)
 
+
+instrument_dict = {'2M0-FLOYDS-SCICAM': 'floyds',
+                    '1M0-SCICAM-SINISTRO': 'sinistro',
+                    '2M0-SCICAM-MUSCAT': 'muscat',
+                    '0M4-SCICAM-SBIG': 'sbig0m4',
+                    '0M4-SCICAM-QHY600': 'qhy',
+                    }
+
+priority_dict = {'NORMAL': 'normal',
+                    'TIME_CRITICAL': 'time_critical',
+                    'RAPID_RESPONSE': 'immediate_too'}
+
 @contextmanager
 def _get_session(db_address):
     Base = automap_base()
@@ -322,12 +334,6 @@ def sync_observation_with_snex1(snex_id, params, requestgroup_id, wrapped_sessio
     Hook to sync an obervation record submitted through SNEx2
     to the obslog table in the SNEx1 database
     '''
-    instrument_dict = {'2M0-FLOYDS-SCICAM': 'floyds',
-                       '1M0-SCICAM-SINISTRO': 'sinistro',
-                       '2M0-SCICAM-MUSCAT': 'muscat',
-                       '0M4-SCICAM-SBIG': 'sbig0m4',
-                       '0M4-SCICAM-QHY600': 'qhy',
-                       }
 
     if wrapped_session:
         db_session = wrapped_session
@@ -390,7 +396,8 @@ def sync_observation_with_snex1(snex_id, params, requestgroup_id, wrapped_sessio
                 seeing=9999,
                 airmass=params['max_airmass'],
                 slit=slit,
-                priority=params['observation_mode'].lower().replace(' ', '_'),
+                priority=priority_dict.get(params['observation_mode'].replace(' ', '_'), 'normal'),
+                #priority=params['observation_mode'].lower().replace(' ', '_'),
                 ipp=params['ipp_value'],
                 requestsid=snex_id,
                 tracknumber=requestgroup_id
@@ -416,13 +423,6 @@ def sync_sequence_with_snex1(params, group_names, userid=67, comment=False, targ
     Hook to sync an observation sequence submitted through SNEx2 
     to the obsrequests table in the SNEx1 database
     '''
-
-    instrument_dict = {'2M0-FLOYDS-SCICAM': 'floyds',
-                       '1M0-SCICAM-SINISTRO': 'sinistro',
-                       '2M0-SCICAM-MUSCAT': 'muscat',
-                       '0M4-SCICAM-SBIG': 'sbig0m4',
-                       '0M4-SCICAM-QHY600': 'qhy',
-                       }
 
     if wrapped_session:
         db_session = wrapped_session
@@ -524,7 +524,8 @@ def sync_sequence_with_snex1(params, group_names, userid=67, comment=False, targ
                 acqradius=int(params.get('acquisition_radius', 0)),
                 guidermode=params.get('guider_mode', '').upper(),
                 guiderexptime=int(params.get('guider_exposure_time', 10)),
-                priority=params['observation_mode'].lower().replace(' ', '_'),
+                priority=priority_dict.get(params['observation_mode'].replace(' ', '_'), 'normal'),
+                #priority=params['observation_mode'].lower().replace(' ', '_'),
                 approved=1,
                 nextreminder=nextreminder,
                 groupidcode=groupidcode,
