@@ -191,15 +191,20 @@ def update_phot(action, db_address=_SNEX2_DB):
                 #Look up the dataproductid from the datum_extra table
                 with get_session(db_address=db_address) as db_session:
                     
-                    #snex2_id_query = db_session.query(Datum).filter(and_(Datum.target_id==targetid, Datum.data_type=='photometry')).all()
-                    snex2_id_query = db_session.query(Datum).filter(Datum.data_type=='photometry').order_by(Datum.id.desc()).all()
-                    for snex2_row in snex2_id_query:
-                        value = snex2_row.value
-                        if type(value) == str:
-                            value = json.loads(snex2_row.value)
-                        if id_ == value.get('snex_id', ''):
-                            db_session.delete(snex2_row)
-                            break
+                    # #snex2_id_query = db_session.query(Datum).filter(and_(Datum.target_id==targetid, Datum.data_type=='photometry')).all()
+                    # snex2_id_query = db_session.query(Datum).filter(Datum.data_type=='photometry').order_by(Datum.id.desc()).all()
+                    # for snex2_row in snex2_id_query:
+                    #     value = snex2_row.value
+                    #     if type(value) == str:
+                    #         value = json.loads(snex2_row.value)
+                    #     if id_ == value.get('snex_id', ''):
+                    #         db_session.delete(snex2_row)
+                    #         break
+                    snex2_id_query = db_session.query(Datum).filter(
+                        Datum.value['snex_id'].astext == str(id_)
+                    ).first()
+                    if snex2_id_query is not None:
+                        db_session.delete(snex2_id_query)
                     db_session.commit()
 
                     #snex2_id_query = db_session.query(Datum_Extra).filter(and_(Datum_Extra.snex_id==id_, Datum_Extra.data_type=='photometry')).first()
