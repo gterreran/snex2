@@ -2,6 +2,7 @@ import os
 from gw.models import GWFollowupGalaxy
 from tom_common.hooks import run_hook
 from tom_targets.models import Target, TargetExtra
+from tom_observations.models import ObservationRecord
 from tom_nonlocalizedevents.models import EventSequence
 from custom_code.views import cancel_observation, Snex1ConnectionError
 from custom_code.hooks import _return_session, _load_table
