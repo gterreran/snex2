@@ -30,6 +30,7 @@ PS1_CUT = 'https://ps1images.stsci.edu/cgi-bin/fitscut.cgi'
 #https://datalab.noirlab.edu/docs/manual/UsingAstroDataLab/DataAccessInterfaces/SimpleImageAccessSIA/SimpleImageAccessSIA.html
 #COLLECTION = 'coadd_all'
 COLLECTION = 'ls_dr9'
+COLLECTION = 'coadd/decaps_dr2'
 DECAM_SERVICE = f'https://datalab.noirlab.edu/sia/{COLLECTION}'
 
 #Skymapper urls
@@ -73,13 +74,14 @@ class survey_request:
 
         '''
 
-        tableurl = f'{PS1_TAB}?ra={self.coord.ra.deg}&dec={self.coord.dec.deg}&size={FOV.to(u.arcsec)/0.25}&format=fits&filters={self.filters}'
+        tableurl = f'{PS1_TAB}?ra={self.coord.ra.deg}&dec={self.coord.dec.deg}&size={FOV.to(u.arcsec).value/0.25}&format=fits&filters={self.filters}&type=stack,stack.wt,stack.mask'
         table = Table.read(tableurl, format='ascii')
         for tab in table:
             flt = tab['filter']
             filename = tab['filename']
             url = f'{PS1_CUT}?ra={self.coord.ra.deg}&dec={self.coord.dec.deg}&size=2500&format=fits&red={filename}'
-            out_name = f'{OUT_FOLDER}/{survey}/{self.obj}_{flt}.fits'
+            #out_name = f'{OUT_FOLDER}/{survey}/{self.obj}_{flt}.fits'
+            out_name = f'{OUT_FOLDER}/{survey}/{self.obj}_{flt}.{".".join(filename.split(".")[10:])}'
             urllib.request.urlretrieve(url, out_name)
             self.templates_paths[f'{survey}_{flt}'] = out_name
             with pf.open(out_name, mode='update') as hdu:
@@ -95,8 +97,7 @@ class survey_request:
                 hdu[0].header['DEC'] = self.coord.dec.deg
 
                 hdu.flush()
-                
-        contained_by(self.wcs)
+
 
 
 #######   ---SDSS---   #######
@@ -179,11 +180,14 @@ class survey_request:
             header['AIRMASS'] = 1
             header['WCSERR'] = 0
             header['BUNIT'] = ('counts', 'ADUs')
-            pf.writeto(f'{OUT_FOLDER}/{survey}/{self.obj}_{flt}.fits', array, header, overwrite=True)
+
+            out_name = f'{OUT_FOLDER}/{survey}/{self.obj}_{flt}'
+            self.templates_paths[f'{survey}_{flt}'] = out_name+'.fits'
+            pf.writeto(out_name+'.fits', array, header, overwrite=True)
 
             #hotpants needs the variance, so we need the writeout 1/footprint
             header['BUNIT'] = ('counts2', 'ADUs^2')
-            pf.writeto(f'{OUT_FOLDER}/{survey}/{self.obj}_{flt}.var.fits', 1/footprint, header, overwrite=True)
+            pf.writeto(out_name+'.var.fits', 1/footprint, header, overwrite=True)
 
 
 
@@ -194,13 +198,15 @@ class survey_request:
         '''
         Skymapper has the ability to search for multiple filters in one go,
         but the returned list of file loses the information on the filter,
-        so I need to send a seperate quary for each filter.
+        so I need to send a seperate query for each filter.
+        Biggest size for Skymapper is 0.17 deg
 
         '''
-
+        from astropy import units as u
         for flt in self.filters:
 
-            url = f'{SKY_CUT}?POS={self.coord.ra.deg},{self.coord.dec.deg}&SIZE={WIDTH_RA},{WIDTH_DEC}&BAND={flt}&FORMAT=image/fits&INTERSECT=covers&RESPONSEFORMAT=VOTABLE'
+            url = f'{SKY_CUT}?POS={self.coord.ra.deg},{self.coord.dec.deg}&SIZE=0.17,0.17&BAND={flt}&FORMAT=image/fits&INTERSECT=covers&RESPONSEFORMAT=VOTABLE'
+
 
             u = urllib.request.urlopen(url)
             s = io.BytesIO(u.read())
@@ -223,6 +229,9 @@ class survey_request:
                     hdu[0].header['DEC'] = self.coord.dec.deg
 
                     hdu.flush()
+            
+            else:
+                print(f'Coordinates {self.coord.ra.deg} {self.coord.dec.deg} not in Skymapper with filter {flt}.')
                 
             
 
@@ -231,12 +240,12 @@ class survey_request:
     def search_for_DECam(self, survey):
 
         connect = sia.SIAService(DECAM_SERVICE)
-        table = connect.search(pos = (self.coord.ra.deg,self.coord.dec.deg), size = (WIDTH_RA, WIDTH_DEC), verbosity=2).to_table()
+        table = connect.search(pos = (self.coord.ra.deg, self.coord.dec.deg), size = (FOV.to(u.deg).value, FOV.to(u.deg).value), verbosity=2).to_table()
 
         for flt in self.filters:
-
-            sel = (table['prodtype'] == 'image') & (startswith(table['obs_bandpass'].astype(str), flt))
             
+            sel = (table['prodtype'] == 'image') & (startswith(table['obs_bandpass'].astype(str), flt))
+
             if len(table[sel]) != 0:
                 out_name = f'{OUT_FOLDER}/{survey}/{self.obj}_{flt}.fits'
                 urllib.request.urlretrieve(table[sel]['access_url'][0], out_name)
@@ -252,6 +261,8 @@ class survey_request:
                     hdu[0].header['DEC'] = self.coord.dec.deg
 
                     hdu.flush()
+            else:
+                print(f'Coordinates {self.coord.ra.deg} {self.coord.dec.deg} not in DECam with filter {flt}.')
     
 
 def get_SDSS_gain_and_darkVariance(_flt, _run, _camcol):
@@ -483,17 +494,80 @@ def reproject_and_combine(_imglist, _weightlist):#, _coord):
 
     # pf.writeto('test_combine.fits', array, wcs_out.to_header(), overwrite=True)
     # pf.writeto('test_footprint.fits', footprint, wcs_out.to_header(), overwrite=True)
-            
-
-lco_fits = pf.open('/Users/giacomoterreran/lco/data/snexdata_target7856/tfn1m014-fa20-20231005-0153-e91.fits')
-wcs = WCS(lco_fits[0].header)
-footprint = wcs.calc_footprint()
-target_coord = SkyCoord(lco_fits[0].header['RA'], lco_fits[0].header['DEC'], unit=(u.hourangle, u.deg))
 
 
-target_coord = SkyCoord(13.576921, -40.392550, unit=(u.deg, u.deg))
-s = survey_request('at2023pcw',target_coord , 'gri')
+# lco_fits = pf.open('/Users/giacomoterreran/lco/data/snexdata_target7856/tfn1m014-fa20-20231005-0153-e91.fits')
+# wcs = WCS(lco_fits[0].header)
+# footprint = wcs.calc_footprint()
+# target_coord = SkyCoord(lco_fits[0].header['RA'], lco_fits[0].header['DEC'], unit=(u.hourangle, u.deg))
+
+# import numpy as np
+# import matplotlib.pyplot as plt
+
+# im = pf.open('/Users/giacomoterreran/lco/data/data/extdata/O4/PS1/SN2023rbk_g.fits')
+
+# plt.figure(figsize=(10, 8))
+# ax1 = plt.subplot(1, 1, 1, projection=WCS(im[0]))
+# im1 = ax1.imshow(im[0].data, origin='lower', vmin=600, vmax=800)
+# ax1.plot([49.13674189,49.13062658,48.53523662,48.54543162]*u.deg, [ 41.39245501, 41.83609281,41.82997431, 41.38637844]*u.deg, color = 'r', lw=3, transform=ax1.get_transform("world"))
+
+
+# grid = generate_FOV_grid(target_coord, FOV)
+
+# for p in grid:
+#     ax1.plot(p.ra, p.dec, marker='o', color='r', ms=10, transform=ax1.get_transform("world"))
+
+# plt.show()
+# exit()
+
+#target_coord = SkyCoord(13.576921, -40.392550, unit=(u.deg, u.deg))
+#s = survey_request('at2023pcw',target_coord , 'gri')
 #s = survey_request(lco_fits[0].header['OBJECT'], target_coord, 'gri')
-s.search_for_SDSS()
+#s.search_for_SDSS()
+#s.search_for_PS1()
 #s.search_for_DECam()
-        
+
+galaxies = [[125.5433,-25.8880],
+            [125.4069,-21.5691],
+            [123.8377,-33.1189],
+            [122.7733,-30.8752],
+            [124.7261,-32.7621],
+            [124.3686,-31.8556],
+            [124.2324,-31.4309],
+            [125.9628,-28.2488],
+            [122.3471,-31.1373],
+            [125.8190,-22.0851],
+            [123.9586,-31.1844],
+            [121.8064,-31.9581],
+            [125.4043,-33.0136],
+            [123.1610,-31.8733],
+            [122.7131,-33.0211],
+            [120.6195,-29.2095],
+            [122.8184,-30.9066],
+            [125.0188,-37.1348],
+            [124.6821,-32.4162],
+            [126.6102,-27.3605],
+            [124.7649,-37.0665],
+            [123.7104,-34.3874],
+            [121.4886,-26.8309],
+            [123.3382,-28.0374],
+            [123.8712,-28.3101],
+            [124.8092,-28.7278],
+            [125.3822,-30.4291],
+            [124.1169,-27.8063],
+            [122.1070,-31.0502],
+            [125.2081,-37.1875]]
+
+url = 'https://alasky.cds.unistra.fr/hips-image-services/hips2fits#ra=119.51849999999999&dec=-27.298400000000004&fov=0.4&projection=AIT'
+
+urllib.request.urlretrieve(url, 'test.html')
+
+# for g in galaxies:
+#     name = str(g[0])+'_'+str(g[1])
+#     target_coord = SkyCoord(g[0], g[1], unit=(u.deg, u.deg))
+#     s = survey_request(name, target_coord, 'gri')
+    
+#     #s.search_for_Skymapper()
+#     s.search_for_DECam()
+
+
