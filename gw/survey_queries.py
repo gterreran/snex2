@@ -36,8 +36,12 @@ DECAM_SERVICE = f'https://datalab.noirlab.edu/sia/{COLLECTION}'
 #Skymapper urls
 SKY_CUT = 'https://api.skymapper.nci.org.au/public/siap/dr4/query'
 
-FOV = 26.5*u.arcmin #Sinistro FOV is 26.5'x26.5'
-RESOLUTION = 0.389*u.arcsec 
+#Specifications for different instruments
+#The FOV here is thought as the diameter of a circle that would circumscribe the LCO image.
+FOV = {'sinistro': 26.5*np.sqrt(2)*u.arcmin, 'muscat': 9.1*np.sqrt(2)*u.arcmin, 'qhy': np.sqrt(1.9**2 + 1.2**2)*u.deg}
+RESOLUTION = {'sinistro':0.389*u.arcsec, 'muscat': 0.27*u.arcsec, 'qhy':0.74*u.arcsec}
+
+
 
 class survey_request:
     '''
@@ -49,18 +53,56 @@ class survey_request:
     the template in the 'hdu' attribute.
 
     '''
+
     def __init__(self, _obj, _coord, _filters):
+        '''
+        Initializing the class with the name of the object :_obj:,
+        the coordinates :_coord: and the filters :_filters: to search.
+        The empty dictionary :templates_paths: is also created.
+
+        *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+        :_obj: Name of the object, mainly for file naming purposes
+        :type _obj: string
+
+        :_coord: coordinates of the object, corresponding to the center
+                 of the search
+        :type _coord: astropy.coordinates.sky_coordinate.SkyCoord
+
+        :_filters: filters to search. If searching for multiple filters
+                   use a single long string, e.g. 'gri'
+        :type _filters: string
+
+        '''
         self.obj = _obj
         self.coord = _coord
         self.filters = _filters
         self.templates_paths = {}
 
     
+    #Defining a decorator. Because decorators are cool
     def set_survey(_survey):
+        '''
+        This decorator set the name of survey for the following function, through the
+        :_survey: variable, and initialize the :self.templates_paths: dictionary with
+        a '--' string for that specific survey. The idea is that by initializing the
+        dictionary, there will be a record that the search has been performed.
+        Otherwise the dictionary will not have any entry for that survey.
+
+        *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+        :_survey: Name of the survey
+        :type _center: string
+
+        *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+        :return: Decorated function
+        :rtype: function
+
+        '''
         def decorate(function):
             def initialize_survey(self):
+                #initializing all the filters
                 for flt in self.filters:
                     self.templates_paths[f'{_survey}_{flt}'] = '--'
+                print(f'Searching for {_survey} templates.')
                 return function(self, _survey)
             return initialize_survey
         return decorate
@@ -70,12 +112,22 @@ class survey_request:
     @set_survey('PS1')
     def search_for_PS1(self, survey):
         '''
-        PS1 needs the size in pixels, considering 0.25 arcsec/pixel.
+        This function searches and downloads PS1 templates.
+        Together with the data, it will fetch also the weight images (i.e. 1/variance)
+        and the mask images.
 
         '''
 
-        tableurl = f'{PS1_TAB}?ra={self.coord.ra.deg}&dec={self.coord.dec.deg}&size={FOV.to(u.arcsec).value/0.25}&format=fits&filters={self.filters}&type=stack,stack.wt,stack.mask'
+        #Creating the url to query the PS1 database.
+        #NOTE: PS1 needs the size in pixels, considering 0.25 arcsec/pixel.
+        tableurl = f'{PS1_TAB}?ra={self.coord.ra.deg}&dec={self.coord.dec.deg}&size={FOV["sinistro"].to(u.arcsec).value/0.25}&format=fits&filters={self.filters}&type=stack,stack.wt,stack.mask'
         table = Table.read(tableurl, format='ascii')
+
+        #If the table is empty, the images are not in PS1
+        if len(table) == 0:
+            print(f'Provided coordinates {self.coord.ra.deg},{self.coord.dec.deg} do not appear to be in the PS1 footprint.')
+            return
+        
         for tab in table:
             flt = tab['filter']
             filename = tab['filename']
@@ -520,54 +572,9 @@ def reproject_and_combine(_imglist, _weightlist):#, _coord):
 # plt.show()
 # exit()
 
-#target_coord = SkyCoord(13.576921, -40.392550, unit=(u.deg, u.deg))
-#s = survey_request('at2023pcw',target_coord , 'gri')
+target_coord = SkyCoord(13.576921, -40.392550, unit=(u.deg, u.deg))
+s = survey_request('at2023pcw',target_coord , 'gri')
 #s = survey_request(lco_fits[0].header['OBJECT'], target_coord, 'gri')
 #s.search_for_SDSS()
-#s.search_for_PS1()
+s.search_for_PS1()
 #s.search_for_DECam()
-
-galaxies = [[125.5433,-25.8880],
-            [125.4069,-21.5691],
-            [123.8377,-33.1189],
-            [122.7733,-30.8752],
-            [124.7261,-32.7621],
-            [124.3686,-31.8556],
-            [124.2324,-31.4309],
-            [125.9628,-28.2488],
-            [122.3471,-31.1373],
-            [125.8190,-22.0851],
-            [123.9586,-31.1844],
-            [121.8064,-31.9581],
-            [125.4043,-33.0136],
-            [123.1610,-31.8733],
-            [122.7131,-33.0211],
-            [120.6195,-29.2095],
-            [122.8184,-30.9066],
-            [125.0188,-37.1348],
-            [124.6821,-32.4162],
-            [126.6102,-27.3605],
-            [124.7649,-37.0665],
-            [123.7104,-34.3874],
-            [121.4886,-26.8309],
-            [123.3382,-28.0374],
-            [123.8712,-28.3101],
-            [124.8092,-28.7278],
-            [125.3822,-30.4291],
-            [124.1169,-27.8063],
-            [122.1070,-31.0502],
-            [125.2081,-37.1875]]
-
-url = 'https://alasky.cds.unistra.fr/hips-image-services/hips2fits#ra=119.51849999999999&dec=-27.298400000000004&fov=0.4&projection=AIT'
-
-urllib.request.urlretrieve(url, 'test.html')
-
-# for g in galaxies:
-#     name = str(g[0])+'_'+str(g[1])
-#     target_coord = SkyCoord(g[0], g[1], unit=(u.deg, u.deg))
-#     s = survey_request(name, target_coord, 'gri')
-    
-#     #s.search_for_Skymapper()
-#     s.search_for_DECam()
-
-
