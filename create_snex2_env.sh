@@ -63,7 +63,7 @@ echo
 echo "Creating the yaml file."
 echo
 
-#Considering tha we create the yaml file from scratch, we can even consider
+#Considering that we create the yaml file from scratch, we can even consider
 #to prompt the user to insert their own user and password for the database
 
 # cat > snex2_conda_environment.yml << EOF
