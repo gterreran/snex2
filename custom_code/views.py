@@ -49,7 +49,7 @@ import plotly.graph_objs as go
 from tom_dataproducts.models import ReducedDatum, DataProduct
 from django.utils.safestring import mark_safe
 from custom_code.templatetags.custom_code_tags import get_24hr_airmass, airmass_collapse, lightcurve_collapse, spectra_collapse, lightcurve_fits, lightcurve_with_extras, get_best_name, dash_spectra_page, scheduling_list_with_form, smart_name_list
-from custom_code.hooks import _get_tns_params, _return_session, get_unreduced_spectra
+from custom_code.hooks import _get_tns_params, _return_session, get_unreduced_spectra, get_standards_from_snex1
 from custom_code.thumbnails import make_thumb
 
 from .forms import CustomTargetCreateForm, CustomDataProductUploadForm, PapersForm, PhotSchedulingForm, ReferenceStatusForm
@@ -1988,4 +1988,21 @@ def download_photometry_view(request, targetid):
     response = HttpResponse(newfile.getvalue(), content_type='text/plain')
     response['Content-Disposition'] = 'attachment; filename={}.txt'.format(target.name.replace(' ',''))
     return response
+
+
+def get_target_standards_view(request):
+
+    target_id = request.GET.get('target_id', '')
+
+    standard_info = get_standards_from_snex1(target_id)
+    
+    html = render_to_string(
+        template_name='custom_code/partials/get_target_standards.html',
+        context={'standards': standard_info}
+    )
+
+    data_dict = {"html_from_view": html}
+
+    return JsonResponse(data=data_dict, safe=False)
+        
 

@@ -16,7 +16,7 @@ from django.contrib.auth.models import User
 from django.conf import settings
 
 from sqlalchemy import create_engine, pool, and_, or_, not_
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, aliased
 from sqlalchemy.ext.automap import automap_base
 from contextlib import contextmanager
 from collections import OrderedDict
@@ -869,3 +869,35 @@ def get_unreduced_spectra(allspec=True):
         imgpaths = [s.filepath.replace('/supernova/data/floyds', '/snex2/data/floyds') + s.filename.replace('.fits', '.png') for s in unreduced_spectra]
 
     return targetids, propids, dateobs, paths, filenames, imgpaths
+
+
+def get_standards_from_snex1(target_id):
+    
+    with _get_session(db_address=settings.SNEX1_DB_URL) as db_session:
+        
+        photlco = _load_table('photlco', db_address=settings.SNEX1_DB_URL)
+        #targetnames = _load_table('targetnames', db_address=settings.SNEX1_DB_URL)
+        targets = _load_table('targets', db_address=settings.SNEX1_DB_URL)
+
+        std = aliased(photlco)
+        obj = aliased(photlco)
+
+        standard_info = db_session.query(
+            std.objname, std.filename, std.filter, std.dateobs,
+            std.telescope, std.instrument
+        ).distinct().join(
+            targets, std.targetid==targets.id 
+        ).filter(
+            and_(
+                obj.telescopeid==std.telescopeid,
+                obj.instrumentid==std.instrumentid,
+                targets.classificationid==1,
+                obj.filter==std.filter,
+                obj.dayobs==std.dayobs,
+                obj.quality==127,
+                std.quality==127,
+                obj.targetid==target_id
+            )
+        )
+
+    return [dict(r._mapping) for r in standard_info]

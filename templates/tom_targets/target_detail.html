@@ -193,7 +193,7 @@
         {% observing_buttons object %}
         <hr/>
 	<button onclick="display_obs()" class="btn" style="background-color: white; color: black; font-size: 16px; border: none; outline: none; box-shadow: none;">Show Previous Observations</button>
-        <!--a href="{% url 'targets:detail' pk=target.id %}?update_status=True" title="Update status of observations for target" class="btn btn-primary">Update Observations Status</a--!>
+        <!--a href="{% url 'targets:detail' pk=target.id %}?update_status=True" title="Update status of observations for target" class="btn btn-primary">Update Observations Status</a-->
 	<div class="row" id="previous-obs" style="display: none; color: gray;">
           {% observation_summary object 'previous' %}
 	</div>
@@ -221,8 +221,9 @@
         {#% lightcurve object %#}
 	{% snex2_get_photometry_data object %}
 	<div align="center">
-          <u><span style="font-family: 'Open Sans', sans-serif; font-weight:200; font-size:10pt; color:#ff9900;"><a href="{% url 'custom_code:download-photometry' target.id %}">Download Photometry for this Target</a></span></u>
-        </div>
+          <u><span style="font-family: 'Open Sans', sans-serif; font-weight:200; font-size:10pt; color:#ff9900;"><a href="{% url 'custom_code:download-photometry' target.id %}">Download Photometry for this Target</a></span></u><br>
+          <u><span style="font-family: 'Open Sans', sans-serif; font-weight:200; font-size: 10pt; cursor: pointer;"><div style="text-decoration: underline;" id="standard-div" onclick="loadStandardTable(); this.onclick=null;">View Standard Info for this Target</div></span></u>
+  </div>
 	{% dash_lightcurve object 1000 600 %}
       </div>
       <div class="tab-pane" id="spectroscopy">
@@ -277,6 +278,19 @@ function savecomment(spectrumId) {
     dataType: 'json',
     success: function() {
       document.getElementById("comment-"+spectrumId).insertAdjacentHTML('beforebegin', '<div class="row">{{ user.username }}: ' + comment +'</div>');
+    }
+  })
+}
+function loadStandardTable() {
+  var standardDiv = document.getElementById('standard-div');
+  standardDiv.innerHTML = 'Loading ... this may take a while ...';
+  $.ajax({
+    url: '{% url "custom_code:get-target-standards" %}',
+    data: {'target_id': {{ target.id }}},
+    dataType: 'json',
+    success: function(response) {
+      standardDiv.style.cursor = 'default';
+      standardDiv.innerHTML = response['html_from_view'];
     }
   })
 }
