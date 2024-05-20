@@ -9,6 +9,9 @@ from tom_observations.models import ObservationRecord
 import logging
 from django.conf import settings
 import survey_queries
+from astropy.coordinates import SkyCoord
+from astropy import units as u
+from survey_queries.query import template_query
 
 
 logger = logging.getLogger(__name__)
@@ -102,12 +105,14 @@ def ingest_gw_galaxy_into_snex1(target_id, event_id, wrapped_session=None):
         snex2_target = Target.objects.get(id=target_id)
         ra0 = snex2_target.ra
         dec0 = snex2_target.dec
+        objname = snex2_target.objname
 
-        templ = survey_queries.survey_request(ra0, dec0, 'gri')
-        templ.search_for_PS1_urls()
-        templ.search_for_Skymapper_urls()
-        templ.search_for_DECam_urls()
-        templ.fetch_urls()
+        #I'm not sure this is a Skycoord object. If it is, remove the following line
+        target_coord = SkyCoord(ra0,dec0, unit=(u.deg, u.deg))
+
+        templ = template_query(objname,target_coord , 'g', ['sinistro','muscat'])
+        templ.search_for_PS1()
+        templ.search_for_SDSS()
 
         db_session.add(o4_galaxies(targetid=target_id, event_id=event_id, ra0=ra0, dec0=dec0, **templ.templates_paths))
 
