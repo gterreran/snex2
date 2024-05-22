@@ -156,6 +156,9 @@ def submit_galaxy_observations_view(request):
         db_session = _return_session()
         failed_obs = []
         all_pointings = []
+
+        snex1_targets = []
+
         with transaction.atomic():
             for galaxy in galaxies:
                 newtarget, created = Target.objects.get_or_create(
@@ -164,6 +167,8 @@ def submit_galaxy_observations_view(request):
                         dec=galaxy.dec,
                         type='SIDEREAL'
                 )
+
+                snex1_targets.append([newtarget.id, galaxy.eventlocalization.nonlocalizedevent.event_id])
 
                 if created:
                     gw = Group.objects.get(name='GWO4')
@@ -294,16 +299,17 @@ def submit_galaxy_observations_view(request):
                         record.parameters['name'] = snex_id
                         record.save()
 
-                ### Log the target in SNEx1 and ingest template images
-                run_hook('ingest_gw_galaxy_into_snex1', 
-                         newtarget.id, 
-                         galaxy.eventlocalization.nonlocalizedevent.event_id,
-                         wrapped_session=db_session)
-
                 ### Submit pointing to TreasureMap
                 #pointings = build_tm_pointings(newtarget, observing_parameters)
 
                 #all_pointings += pointings
+            
+            ### Log the target in SNEx1 and ingest template images
+            run_hook('ingest_gw_galaxy_into_snex1', 
+                        snex1_targets,
+                        wrapped_session=db_session)
+            
+            
 
             #submitted = submit_tm_pointings(galaxy.eventlocalization.sequences.first(), all_pointings)
             #if not submitted:

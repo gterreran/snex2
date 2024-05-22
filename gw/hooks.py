@@ -8,10 +8,7 @@ from ..custom_code.hooks import _return_session, _load_table
 from tom_observations.models import ObservationRecord
 import logging
 from django.conf import settings
-import survey_queries
-from astropy.coordinates import SkyCoord
-from astropy import units as u
-from survey_queries.query import template_query
+from run_template_search import run_template_search
 
 
 logger = logging.getLogger(__name__)
@@ -75,7 +72,7 @@ def cancel_gw_obs(galaxy_ids=[], sequence_id=None, wrapped_session=None):
         logger.info('Finished canceling GW follow-up observations for sequence {}'.format(sequence_id))
 
 
-def ingest_gw_galaxy_into_snex1(target_id, event_id, wrapped_session=None):
+def ingest_gw_galaxy_into_snex1(target_list, wrapped_session=None):
 
     if wrapped_session:
         db_session = wrapped_session
@@ -85,36 +82,35 @@ def ingest_gw_galaxy_into_snex1(target_id, event_id, wrapped_session=None):
 
     o4_galaxies = _load_table('o4_galaxies', db_address=settings.SNEX1_DB_URL)
 
-    existing_target = db_session.query(o4_galaxies).filter(o4_galaxies.targetid==target_id)
-    if existing_target.count() > 0:
-        if any([t.event_id == event_id for t in existing_target]):
-            logger.info('Already ingested target {} into o4_galaxies table for event {}'.format(target_id, event_id))
+    templates_to_download = []
+
+    for target_id, event_id in target_list:
+
+        existing_target = db_session.query(o4_galaxies).filter(o4_galaxies.targetid==target_id)
+        if existing_target.count() > 0:
+            if any([t.event_id == event_id for t in existing_target]):
+                logger.info('Already ingested target {} into o4_galaxies table for event {}'.format(target_id, event_id))
+
+            else:
+                logger.info('Found existing target {} in o4_galaxies table, copying it'.format(target_id))
+                existing_target_row = existing_target.first()
+                existing_table = existing_target_row.__table__ #Somehow this is different than the o4_galaxies object
+                
+                non_pk_columns = [k for k in existing_table.columns.keys() if k not in existing_table.primary_key.columns.keys()]
+                data = {c: getattr(existing_target_row, c) for c in non_pk_columns}
+                data['event_id'] = event_id
+
+                db_session.add(o4_galaxies(**data))
 
         else:
-            logger.info('Found existing target {} in o4_galaxies table, copying it'.format(target_id))
-            existing_target_row = existing_target.first()
-            existing_table = existing_target_row.__table__ #Somehow this is different than the o4_galaxies object
-            
-            non_pk_columns = [k for k in existing_table.columns.keys() if k not in existing_table.primary_key.columns.keys()]
-            data = {c: getattr(existing_target_row, c) for c in non_pk_columns}
-            data['event_id'] = event_id
+            t = Target.objects.get(id=target_id)
+            templates_to_download.append([target_id, event_id, t.objname, t.ra, t.dec])
+    
+    # This call will make everything stop until all templates are downloaded.
+    templates_paths = run_template_search(templates_to_download, _filters = 'griz', _surveys = ['PS1,SDSS'], _instruments = ['sinistro','muscat'])
 
-            db_session.add(o4_galaxies(**data))
-
-    else:
-        snex2_target = Target.objects.get(id=target_id)
-        ra0 = snex2_target.ra
-        dec0 = snex2_target.dec
-        objname = snex2_target.objname
-
-        #I'm not sure this is a Skycoord object. If it is, remove the following line
-        target_coord = SkyCoord(ra0,dec0, unit=(u.deg, u.deg))
-
-        templ = template_query(objname,target_coord , 'g', ['sinistro','muscat'])
-        templ.search_for_PS1()
-        templ.search_for_SDSS()
-
-        db_session.add(o4_galaxies(targetid=target_id, event_id=event_id, ra0=ra0, dec0=dec0, **templ.templates_paths))
+    for id in templates_paths.keys():
+        db_session.add(o4_galaxies(targetid=templates_paths[id].target_id, event_id=templates_paths[id].event_id, ra0=templates_paths[id].ra, dec0=templates_paths[id].dec, **templates_paths[id].templates_paths))
 
     if not wrapped_session:
         try:

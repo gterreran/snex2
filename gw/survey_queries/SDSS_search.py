@@ -9,6 +9,9 @@ from astropy.time import Time
 from astropy.wcs import WCS
 import astropy.io.fits as pf
 import numpy as np
+import logging
+
+logger = logging.getLogger(__name__)
 
 def search_for_SDSS(self, survey):
     '''
@@ -49,20 +52,20 @@ def search_for_SDSS(self, survey):
                 # Initially :grid[0]: will be the center of the field.
                 # After each iteration, the :grid: array is trimmed down and its first element will be
                 # the point on the grid most distant from the center
-                print(f'Querying the SDSS database for coordinates {grid[0].ra.deg} {grid[0].dec.deg}.')
+                logger.info(f'Querying the SDSS database for coordinates {grid[0].ra.deg} {grid[0].dec.deg}.')
                 xid = SDSS.query_region(grid[0], radius=3*u.arcmin, spectro=False)
                 if xid is None:
-                    print(f'\nThe provided coordinates {grid[0].ra.deg},{grid[0].dec.deg} do not appear to be in the SDSS footprint.\n')
+                    logger.info(f'\nThe provided coordinates {grid[0].ra.deg},{grid[0].dec.deg} do not appear to be in the SDSS footprint.\n')
                     return
                 
-                print('Coordinates in SDSS footprint.')
+                logger.info('Coordinates in SDSS footprint.')
                 new_pointings = [list(el) for el in np.unique(xid['run','camcol','field']) if list(el) not in all_pointings]
 
                 all_pointings = all_pointings + new_pointings
 
                 for run, camcol, field in new_pointings:
                     #fetching the fits as an astropy hdu
-                    print(f'Retrieving file with run={run}, camcol={camcol}, field={field} and filter {flt}.')
+                    logger.info(f'Retrieving file with run={run}, camcol={camcol}, field={field} and filter {flt}.')
                     im = SDSS.get_images(run=run, camcol=camcol, field=field, band=flt, cache=True)[0]
 
                     sky_subtracted_original_image_hdu, weight_image_hdu = elaborate_SDSS(im, flt, run, camcol, field)

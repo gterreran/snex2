@@ -8,6 +8,9 @@ from astropy import units as u
 from astropy.time import Time
 from astropy.wcs import WCS
 import astropy.io.fits as pf
+import logging
+
+logger = logging.getLogger(__name__)
 
 # PS1 urls
 PS1_TAB = 'https://ps1images.stsci.edu/cgi-bin/ps1filenames.py'
@@ -53,16 +56,16 @@ def search_for_PS1(query, survey):
         # Creating the url to query the PS1 database.
         # NOTE: PS1 needs the size in pixels, considering 0.25 arcsec/pixel.
         # This first query returns a Table with a list of files
-        print(f'Querying the PS1 database for coordinates {grid[0].ra.deg} {grid[0].dec.deg}.')
+        logger.info(f'Querying the PS1 database for coordinates {grid[0].ra.deg} {grid[0].dec.deg}.')
         tableurl = f'{PS1_TAB}?ra={grid[0].ra.deg}&dec={grid[0].dec.deg}&size={LCO_INSTRUMENTS[inst].fov.to(u.arcsec).value/0.25}&format=fits&filters={query.filters}&type=stack,stack.wt,stack.mask'
         table = Table.read(tableurl, format='ascii')
 
         # If the table is empty, the images are not in PS1
         if len(table) == 0:
-            print(f'\nThe provided coordinates {grid[0].ra.deg},{grid[0].dec.deg} do not appear to be in the PS1 footprint.\n')
+            logger.info(f'\nThe provided coordinates {grid[0].ra.deg},{grid[0].dec.deg} do not appear to be in the PS1 footprint.\n')
             return
         
-        print('Coordinates in PS1 footprint.')
+        logger.info('Coordinates in PS1 footprint.')
         for tab in table:
             flt = tab['filter']
             filename = tab['filename']
@@ -79,7 +82,7 @@ def search_for_PS1(query, survey):
             else:
                 url = f'{PS1_CUT}?ra={grid[0].ra.deg}&dec={grid[0].dec.deg}&size=6000&format=fits&red={filename}'
 
-            print(f'Retrieving file {filename}')
+            logger.info(f'Retrieving file {filename}')
             with pf.open(url) as hdulist:
                 # The skycell headers need some adjustments
                 if SKYCELL:

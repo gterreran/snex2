@@ -3,10 +3,15 @@
 
 """
 
+from astropy.coordinates import SkyCoord
+from astropy import units as u
 from astropy.time import Time
 from astropy.wcs import WCS
 import astropy.io.fits as pf
 import numpy as np
+import logging
+
+logger = logging.getLogger(__name__)
 
 from . import PanSTARRS_search, SDSS_search, DECam_search, generate_FOV_grid, LCO_INSTRUMENTS, SURVEYS, OUT_FOLDER
 
@@ -21,10 +26,13 @@ class template_query:
 
     '''
 
-    def __init__(self, _obj, _coord, _filters, _inst):
+    def __init__(self, _target_id, _event_id, _obj, _ra, _dec, _filters, _inst):
         '''
         Initializing the class with the name of the object :_obj:,
-        the coordinates :_coord: and the filters :_filters: to search.
+        the coordinates :_ra: and :_dec: and the filters :_filters: to
+        search. The target ID :_target_id: and the GW event ID :_event_id:
+        are also included fro completeness, but these are not used by
+        anything.
         The template images will be resampled to match the resolution
         of the instrument (or list of instruments) provided by :_inst:.
         The template FOV will also be as big as to include the whole
@@ -32,12 +40,22 @@ class template_query:
         The empty dictionary :templates_paths: is also created.
 
         *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+        :_target_id: Target ID
+        :type _target_id: int
+
+        :_event_id: GW event ID
+        :type _event_id: int
+
         :_obj: Name of the object, mainly for file naming purposes
         :type _obj: string
 
-        :_coord: coordinates of the object, corresponding to the center
-                 of the search
-        :type _coord: astropy.coordinates.sky_coordinate.SkyCoord
+        :_ra: RA coordinates of the object in deg, corresponding to
+              the center of the search
+        :type _ra: float
+
+        :_dec: Dec coordinates of the object in deg, corresponding to
+              the center of the search
+        :type _dec: float
 
         :_filters: filters to search. If searching for multiple filters
                    use a single long string, e.g. 'gri'
@@ -49,8 +67,13 @@ class template_query:
         :type _inst: string or list
 
         '''
+
+        self.target_id = _target_id
+        self.event_id = _event_id
         self.obj = _obj
-        self.coord = _coord
+        self.ra = _ra
+        self.dec = _dec
+        self.coord = SkyCoord(_ra, _dec, unit=(u.deg, u.deg))
         self.filters = _filters
 
         # Making the :instruments: list and checking the instruments exist.
@@ -95,7 +118,7 @@ class template_query:
                 for flt in self.filters:
                     for inst in self.instruments:
                         self.templates_paths[f'{inst}_{_survey}_{flt}'] = '--'
-                print(f'Searching for {_survey} templates.\n')
+                logger.info(f'Searching for {_survey} templates.\n')
                 return function(self, _survey)
             return initialize_survey
         return decorate
@@ -104,7 +127,6 @@ class template_query:
     def search_for_PS1(self, survey):
         data, weights = PanSTARRS_search.search_for_PS1(self, survey)
         self.make_templates(_data = data, _weights = weights, _survey = survey)
-        print('This is done')
 
     @set_survey('SDSS')
     def search_for_SDSS(self, survey):
@@ -143,7 +165,7 @@ class template_query:
                         _data[flt].pop(skycell_idx)
                         _weights[flt].pop(skycell_idx)
                 
-                print(f'Reprojecting and combining skycells of filer {flt} for {inst}.')
+                logger.info(f'Reprojecting and combining skycells of filer {flt} for {inst}.')
 
                 wcs_out, shape_out = find_optimal_celestial_wcs(_data[flt], resolution=LCO_INSTRUMENTS[inst].resolution)
                 array, footprint = reproject_and_coadd(_data[flt], wcs_out, shape_out=shape_out, reproject_function=reproject_interp, input_weights = _weights[flt], combine_function='mean')
@@ -172,9 +194,11 @@ class template_query:
                 out_name = f'{OUT_FOLDER}/{_survey}/{inst}_{self.obj}_{flt}'
                 self.templates_paths[f'{inst}_{_survey}_{flt}'] = out_name+'.fits'
                 pf.writeto(out_name+'.fits', array, header, overwrite=True)
+                logger.info(f'{out_name}.fits written out.')
 
                 # Hotpants needs the variance, so we need to write out 1/footprint
                 header['BUNIT'] = ('counts2', 'ADUs^2')
                 pf.writeto(out_name+'.var.fits', 1/footprint, header, overwrite=True)
+                logger.info(f'{out_name}.var.fits written out.')
 
 
