@@ -1,4 +1,4 @@
-from models import GWFollowupGalaxy
+from .models import GWFollowupGalaxy
 from tom_common.hooks import run_hook
 from tom_targets.models import TargetExtra
 from tom_nonlocalizedevents.models import EventSequence

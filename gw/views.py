@@ -14,17 +14,17 @@ from astropy.io import fits
 import sep
 from datetime import datetime, timedelta
 from tom_nonlocalizedevents.models import NonLocalizedEvent, EventSequence, EventLocalization
-from gw.models import GWFollowupGalaxy
-from gw.forms import GWGalaxyObservationForm
-from gw.treasure_map_utils import build_tm_pointings, submit_tm_pointings
+from .models import GWFollowupGalaxy
+from .forms import GWGalaxyObservationForm
+from .treasure_map_utils import build_tm_pointings, submit_tm_pointings
 from tom_common.hooks import run_hook
 from tom_targets.models import Target, TargetExtra
 from tom_observations.facility import get_service_class
 from tom_observations.models import ObservationRecord, ObservationGroup, DynamicCadence
-from custom_code.hooks import _return_session
-from custom_code.views import Snex1ConnectionError
+from ..custom_code.hooks import _return_session
+from ..custom_code.views import Snex1ConnectionError
 import logging
-from run_template_search import search_templates_and_update_snex1
+from .run_template_search import search_templates_and_update_snex1
 
 logger = logging.getLogger(__name__)
 
