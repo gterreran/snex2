@@ -26,13 +26,11 @@ class template_query:
 
     '''
 
-    def __init__(self, _target_id, _event_id, _obj, _ra, _dec, _filters, _inst):
+    def __init__(self, _obj, _ra, _dec, _filters, _inst):
         '''
         Initializing the class with the name of the object :_obj:,
         the coordinates :_ra: and :_dec: and the filters :_filters: to
-        search. The target ID :_target_id: and the GW event ID :_event_id:
-        are also included fro completeness, but these are not used by
-        anything.
+        search. 
         The template images will be resampled to match the resolution
         of the instrument (or list of instruments) provided by :_inst:.
         The template FOV will also be as big as to include the whole
@@ -40,11 +38,6 @@ class template_query:
         The empty dictionary :templates_paths: is also created.
 
         *-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
-        :_target_id: Target ID
-        :type _target_id: int
-
-        :_event_id: GW event ID
-        :type _event_id: int
 
         :_obj: Name of the object, mainly for file naming purposes
         :type _obj: string
@@ -68,11 +61,7 @@ class template_query:
 
         '''
 
-        self.target_id = _target_id
-        self.event_id = _event_id
         self.obj = _obj
-        self.ra = _ra
-        self.dec = _dec
         self.coord = SkyCoord(_ra, _dec, unit=(u.deg, u.deg))
         self.filters = _filters
 

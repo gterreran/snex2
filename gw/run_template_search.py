@@ -13,7 +13,7 @@ The :dramatiq: decorator makes it possible to run it asynchronously.
 
 """
 
-from survey_queries.query import template_query
+from .survey_queries.query import template_query
 from ..custom_code.hooks import _return_session, _load_table
 import logging
 from django.conf import settings
@@ -35,8 +35,6 @@ def search_templates_and_update_snex1(_targets_list, _filters, _surveys, _instru
         db_session = _return_session(settings.SNEX1_DB_URL)
 
     gw_table = _load_table(TABLE_NAME, db_address=settings.SNEX1_DB_URL)
-
-    templates_paths ={}
 
     for target_id, event_id in _targets_list:
 
@@ -66,10 +64,7 @@ def search_templates_and_update_snex1(_targets_list, _filters, _surveys, _instru
             if 'SDSS' in _surveys:
                 s.search_for_SDSS()
             
-            templates_paths[target_id] = s
-        
-    for id in templates_paths.keys():
-        db_session.add(gw_table(targetid=templates_paths[id].target_id, event_id=templates_paths[id].event_id, ra0=templates_paths[id].ra, dec0=templates_paths[id].dec, **templates_paths[id].templates_paths))
+            db_session.add(gw_table(targetid = target_id, event_id = event_id, ra0=t.ra, dec0=t.dec, **s.templates_paths))
 
     if not _wrapped_session:
         try:
