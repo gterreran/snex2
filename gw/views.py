@@ -24,6 +24,7 @@ from tom_observations.models import ObservationRecord, ObservationGroup, Dynamic
 from custom_code.hooks import _return_session
 from custom_code.views import Snex1ConnectionError
 import logging
+from run_template_search import search_templates_and_update_snex1
 
 logger = logging.getLogger(__name__)
 
@@ -306,8 +307,9 @@ def submit_galaxy_observations_view(request):
                 #all_pointings += pointings
             
             ### Log the target in SNEx1 and ingest template images
-            run_hook('ingest_gw_galaxy_into_snex1', 
-                        snex1_targets,
+            ### and download templates.
+            ### This is run asynchronously 
+            search_templates_and_update_snex1.send(snex1_targets,
                         wrapped_session=db_session)
             
             

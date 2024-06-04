@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.sites',
     'django_extensions',
+    'django_dramatiq',
     'guardian',
     'tom_common',
     'django_comments',
@@ -548,6 +549,20 @@ ALERT_STREAMS = [
         },
     }
 ]
+
+DRAMATIQ_BROKER = {
+    "BROKER": "dramatiq.brokers.redis.RedisBroker",
+    "OPTIONS": {
+        "url": "redis://127.0.0.1:6379"
+    },
+    "MIDDLEWARE": [
+        "dramatiq.middleware.AgeLimit",
+        "dramatiq.middleware.TimeLimit",
+        "dramatiq.middleware.Callbacks",
+        "dramatiq.middleware.Retries",
+        "django_dramatiq.middleware.DbConnectionsMiddleware",
+    ]
+}
 
 if DEBUG:
     INTERNAL_IPS = [

@@ -8,6 +8,8 @@ gunicorn[gevent]
 django==4.2
 django-heroku
 django-storages
+django_dramatiq
+redis
 boto3
 requests_oauthlib
 python-magic
