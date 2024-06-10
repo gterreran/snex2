@@ -57,7 +57,7 @@ def search_templates_and_update_snex1(_targets_list, _filters, _surveys, _instru
         else:
             t = Target.objects.get(id=target_id)
 
-            s = template_query(target_id, event_id, t.objname, t.ra, t.dec, _filters, _instruments)
+            s = template_query(t.objname, t.ra, t.dec, _filters, _instruments)
 
             if 'PS1' in _surveys:
                 s.search_for_PS1()
