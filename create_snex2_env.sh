@@ -60,11 +60,11 @@ printf "    \`-- 0m4\n"
 
 echo
 
-echo "Creating the yaml file."
-echo
-
 #Considering that we create the yaml file from scratch, we can even consider
 #to prompt the user to insert their own user and password for the database
+
+# echo "Creating the yaml file."
+# echo
 
 # cat > snex2_conda_environment.yml << EOF
 # # run: conda env create --file snex2_conda_environment.yml"
@@ -86,14 +86,14 @@ echo
 #  SNEX2_DB_DATA_PATH: $filepath/supernova/snex2/db_data
 # EOF
 
-conda create -n snex2 -c conda-forge python=3.10 mysql postgresql ligo.skymap
+conda create -n snex2 -c conda-forge python=3.10 mysql=5.7.24 postgresql=12.17 ligo.skymap
 conda env config vars set SNEX2_DB_BACKEND=postgres SNEX2_DB_USER=snex2dbuser SNEX2_DB_PASSWORD=snex2dbpassword SNEX2_DB_HOST=127.0.0.1 SNEX2_DB_PORT=5435 SNEX2_DB_DATA_PATH=$filepath/supernova/snex2/db_data --name snex2
 eval "$(conda shell.bash hook)" #necessary to activate the environment
 conda activate snex2
 pip install -r requirements.txt
 conda deactivate
 
-printf "The SNEx2 environment is now set. To activate it, type\n\n  conda activate snex2\n\n
+printf "The SNEx2 environment is now set. To activate it, type\n\n  conda activate snex2\n\n"
 echo "DONE!"
 
 
