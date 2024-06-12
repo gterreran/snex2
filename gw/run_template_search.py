@@ -14,12 +14,12 @@ The :dramatiq: decorator makes it possible to run it asynchronously.
 """
 
 from .survey_queries.query import template_query
-from ..custom_code.hooks import _return_session, _load_table
+from custom_code.hooks import _return_session, _load_table
 import logging
 from django.conf import settings
 from tom_targets.models import Target
 import dramatiq
-
+import datetime
 
 TABLE_NAME = 'o4_galaxies'
 
@@ -35,6 +35,7 @@ def search_templates_and_update_snex1(_targets_list, _filters, _surveys, _instru
         db_session = _return_session(settings.SNEX1_DB_URL)
 
     gw_table = _load_table(TABLE_NAME, db_address=settings.SNEX1_DB_URL)
+    photlco = _load_table('photlco', db_address=settings.SNEX1_DB_URL)
 
     for target_id, event_id in _targets_list:
 
@@ -66,6 +67,10 @@ def search_templates_and_update_snex1(_targets_list, _filters, _surveys, _instru
             
             db_session.add(gw_table(targetid = target_id, event_id = event_id, ra0=t.ra, dec0=t.dec, **s.templates_paths))
 
+            for template in s.templates_paths:
+                db_session.add(photlco(**photlco_dict(target_id, s.templates_paths[template])))
+
+
     if not _wrapped_session:
         try:
             db_session.commit()
@@ -78,3 +83,66 @@ def search_templates_and_update_snex1(_targets_list, _filters, _surveys, _instru
         db_session.flush()
 
     logger.info('Finished ingesting target {} into {}'.format(target_id, TABLE_NAME))
+
+def photlco_dict(_targetid, _template_path):
+    
+    from survey_queries import SURVEY
+
+    templeate_header = pf.getheader(_template_path)
+    path_list = _template_path.spit('/')
+
+    now = datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%d %H:%M:%S.%f")
+
+    phot_lco_dic = {
+        'targetid': _targetid,
+        'objname': templeate_header['OBJECT'],
+        'dayobs': templeate_header['DAY-OBS'],
+        'dateobs': templeate_header['DATE-OBS'].split('T')[0],
+        'ut': templeate_header['DATE-OBS'].split('T')[1],
+        'mjd': templeate_header['MJD-OBS'],
+        'exptime':1,
+        'filter': templeate_header['FILTER'],
+        'telescopeid': SURVEY[templeate_header['SURVEY']].telescopeid,
+        'instrumentid': SURVEY[templeate_header['SURVEY']].instrumentid,
+        'telescope': templeate_header['TELESCOP'],
+        'instrument': templeate_header['INSTRUME'],
+        'mag': 9999,
+        'dmag': 9999,
+        'airmass': 1,
+        'wcs': 0,
+        'psf': 'X',
+        'apmag': 9999,
+        'psfx': 9999,
+        'psfy': 9999,
+        'psfmag': 9999,
+        'psfdmag': 9999,
+        'z1': 9999,
+        'z2': 9999,
+        'zn': 9999,
+        'c1': 9999,
+        'c2': 9999,
+        'dz1': 9999,
+        'dz2': 9999,
+        'dc1': 9999,
+        'dc2': 9999,
+        'quality': 127,
+        'zcat': 'X',
+        'abscat': 'X',
+        'fwhm': 9999,
+        'magtype': 1,
+        'ra0': templeate_header['RA'],
+        'dec0': templeate_header['DEC'],
+        'tracknumber': 0,
+        'filename': path_list[-1],
+        'filetype': 4,
+        'filepath': '/'.join(path_list[:-1])+'/',
+        'groupidcode': 2199023255552,
+        'datecreated': now,
+        'lastmodified': now,
+        'apflux': 9999,
+        'dapflux': 9999,
+        'dapmag': 9999,
+        'lastunpacked': now
+    }
+
+    return phot_lco_dic

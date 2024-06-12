@@ -172,6 +172,7 @@ class template_query:
                 header['DAY-OBS'] = header['DATE-OBS'].split('T')[0].replace('-', '')
                 header['TELESCOP'] = SURVEYS[_survey].telescope
                 header['INSTRUME'] = SURVEYS[_survey].instrument
+                header['SURVEY'] = _survey
                 header['OBJECT'] = self.obj
                 header['FILTER'] = flt+'p' # NOTE: this works only with griz
                 header['AIRMASS'] = 1

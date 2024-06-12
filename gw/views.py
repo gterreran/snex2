@@ -21,8 +21,8 @@ from tom_common.hooks import run_hook
 from tom_targets.models import Target, TargetExtra
 from tom_observations.facility import get_service_class
 from tom_observations.models import ObservationRecord, ObservationGroup, DynamicCadence
-from ..custom_code.hooks import _return_session
-from ..custom_code.views import Snex1ConnectionError
+from custom_code.hooks import _return_session
+from custom_code.views import Snex1ConnectionError
 import logging
 from .run_template_search import search_templates_and_update_snex1
 
@@ -153,6 +153,8 @@ def submit_galaxy_observations_view(request):
     ### Get list of GWFollowupGalaxy ids from the request and create Targets
     galaxy_ids = json.loads(request.GET['galaxy_ids'])['galaxy_ids']
     galaxies = GWFollowupGalaxy.objects.filter(id__in=galaxy_ids)
+
+    db_session = _return_session()
 
     try:
         db_session = _return_session()

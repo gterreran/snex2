@@ -15,8 +15,8 @@ import astropy.io.fits as pf
 # https://datalab.noirlab.edu/docs/manual/UsingAstroDataLab/DataAccessInterfaces/SimpleImageAccessSIA/SimpleImageAccessSIA.html
 #COLLECTION = 'coadd_all'
 COLLECTION = 'ls_dr9'
-COLLECTION = 'coadd/decaps_dr2'
-COLLECTION = 'delve_dr2'
+# COLLECTION = 'coadd/decaps_dr2'
+# COLLECTION = 'delve_dr2'
 DECAM_SERVICE = f'https://datalab.noirlab.edu/sia/{COLLECTION}'
 
 
@@ -57,6 +57,7 @@ def search_for_DECam(self, survey):
     connect = sia.SIAService(DECAM_SERVICE)
     table = connect.search(pos = (self.coord.ra.deg, self.coord.dec.deg), size = (LCO_INSTRUMENTS['sinistro'].fov.to(u.deg).value, LCO_INSTRUMENTS['sinistro'].fov.to(u.deg).value), verbosity=2).to_table()
 
+    print('something')
     with open('table.csv','w') as out:
         for c in table.columns:
             out.write(c+',')
@@ -65,7 +66,7 @@ def search_for_DECam(self, survey):
             for c in table.columns:
                 out.write(str(table[c][i])+',')
             out.write('\n')
-    
+
     exit()
 
 

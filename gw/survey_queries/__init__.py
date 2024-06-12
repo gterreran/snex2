@@ -15,9 +15,11 @@ class Instrument:
         self.resolution = _resolution
 
 class Survey:
-    def __init__(self, _telescope, _instrument, _skycell_size, _track_skycells_in_header):
+    def __init__(self, _telescope, _telescopeid, _instrument, _instrumentid, _skycell_size, _track_skycells_in_header):
         self.telescope = _telescope
+        self.telescopeid = _telescopeid
         self.instrument = _instrument
+        self.instrumentid = _instrumentid
         self.skycell_size = _skycell_size
         self.track_skycells_in_header = _track_skycells_in_header
 
@@ -33,8 +35,8 @@ LCO_INSTRUMENTS = {
 }
 
 SURVEYS ={
-    'PS1': Survey(_telescope = 'PS1', _instrument = 'GPC1', _skycell_size = 0.4*u.deg, _track_skycells_in_header = PanSTARRS_search.track_skycells_in_header),
-    'SDSS': Survey(_telescope = '2.5m', _instrument = 'SDSS', _skycell_size = 10*u.arcmin, _track_skycells_in_header = SDSS_search.track_skycells_in_header)
+    'PS1': Survey(_telescope = 'PS1', _telescopeid = 41, _instrument = 'GPC1', _instrumentid = 191, _skycell_size = 0.4*u.deg, _track_skycells_in_header = PanSTARRS_search.track_skycells_in_header),
+    'SDSS': Survey(_telescope = 'APO 2.5m', _telescopeid = 139, _instrument = 'SDSS', _instrumentid = 42, _skycell_size = 10*u.arcmin, _track_skycells_in_header = SDSS_search.track_skycells_in_header)
 }
 
 def generate_FOV_grid(_center, _fov, _step, circle=True, wcs = None):
