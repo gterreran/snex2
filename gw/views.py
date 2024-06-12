@@ -154,8 +154,6 @@ def submit_galaxy_observations_view(request):
     galaxy_ids = json.loads(request.GET['galaxy_ids'])['galaxy_ids']
     galaxies = GWFollowupGalaxy.objects.filter(id__in=galaxy_ids)
 
-    db_session = _return_session()
-
     try:
         db_session = _return_session()
         failed_obs = []

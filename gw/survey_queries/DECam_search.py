@@ -17,6 +17,8 @@ import astropy.io.fits as pf
 COLLECTION = 'ls_dr9'
 # COLLECTION = 'coadd/decaps_dr2'
 # COLLECTION = 'delve_dr2'
+DECAM_SERVICE = f'https://datalab.noirlab.edu/tap/{COLLECTION}'
+
 DECAM_SERVICE = f'https://datalab.noirlab.edu/sia/{COLLECTION}'
 
 
@@ -53,6 +55,38 @@ DECAM_SERVICE = f'https://datalab.noirlab.edu/sia/{COLLECTION}'
 def search_for_DECam(self, survey):
 
     from . import generate_FOV_grid, LCO_INSTRUMENTS, SURVEYS
+
+    # <td>Survey:</td>
+    # <td><select name="survey" id="survey" class="survey-option" style="width:50%">
+    #     <option value="ivoa_nsa.siav1">NOIRLab Astro Data Archive</option>
+    #     <option value="ivoa_decaps_dr1.siav1">DECaPS DR1 image tiles</option>
+    #     <option value="ivoa_des_dr1.siav1">DES DR1 image tiles</option>
+    #     <option value="ivoa_des_dr2.siav1">DES DR2 image tiles</option>
+    #     <option value="ivoa_des_sva1.siav1">DES SVA1 image tiles</option>
+    #     <option value="ivoa_des_y1.siav1">DES Year 1 image tiles</option>
+    #     <option value="ivoa_des_y2.siav1">DES Year 2 image tiles</option>
+    #     <option value="ivoa_des_y3.siav1">DES Year 3 image tiles</option>
+    #     <option value="ivoa_des_y4.siav1">DES Year 4 image tiles</option>
+    #     <option value="ivoa_gogreen_dr1.siav1">GOGREEN DR1 image tiles</option>
+    #     <option value="ivoa_ls_dr8.siav1">Legacy Survey DR8 image tiles</option>
+    #     <option value="ivoa_ls_dr9.siav1">Legacy Survey DR9 image tiles</option>
+    #     <option value="ivoa_nsc_dr2.siav1">NOIRLab Source Catalog DR2 image tiles</option>
+    #     <option value="ivoa_sdss_dr9.siav1">SDSS DR9 image tiles</option>
+    #     <option value="ivoa_smash_dr1.siav1">SMASH DR1 image tiles</option>
+    #     <option value="ivoa_smash_dr2.siav1">SMASH DR2 image tiles</option>
+    #     <option value="ivoa_splus_dr1.siav1">S-Plus DR1 image tiles</option>
+    #     <option value="ivoa_splus_edr.siav1">S-Plus EDR image tiles</option>
+    #     <option value="ivoa_stripe82.siav1">Stripe82 image tiles</option>
+    #     <option value="ivoa_calibrated.calibrated_all">Instrument calibrated data only</option>
+    #     <option value="ivoa_coadd.coadd_all">Image stacks/coadds only</option>
+    #     <option value="ivoa_raw.raw_all">Raw data only</option>
+    #     </select>
+    # </td>
+
+
+
+    'https://datalab.noirlab.edu/query/query?sql=" + survey_temp + "+q3c_radial_query(s_ra,+s_dec,+" + items[_i_ra] + ",+" + items[_i_dec] + ",+2)+)+SELECT+access_url,instrument_name,obs_bandpass,exptime,prodtype,proctype,date_obs+FROM+region+WHERE+(abs(spat_hilimit1+-+spat_lolimit1)+<+90.0+AND+("+items[_i_ra]+"+BETWEEN+spat_lolimit1+AND+spat_hilimit1)+AND+("+items[_i_dec]+"+BETWEEN+spat_lolimit2+AND+spat_hilimit2))+OR+(abs(spat_hilimit1+-+spat_lolimit1)+>+90.0+AND+(+("+items[_i_ra]+"+BETWEEN+0.0+AND+spat_lolimit1)+OR+("+items[_i_ra]+"+BETWEEN+spat_hilimit1+AND+360.0))+AND+("+items[_i_dec]+"+BETWEEN+spat_lolimit2+AND+spat_hilimit2))+ORDER+BY+date_obs+DESC&ofmt=csv&out=none&async=false";'
+
 
     connect = sia.SIAService(DECAM_SERVICE)
     table = connect.search(pos = (self.coord.ra.deg, self.coord.dec.deg), size = (LCO_INSTRUMENTS['sinistro'].fov.to(u.deg).value, LCO_INSTRUMENTS['sinistro'].fov.to(u.deg).value), verbosity=2).to_table()
