@@ -22,11 +22,14 @@ import dramatiq
 import datetime
 
 TABLE_NAME = 'o4_galaxies'
+DEFAULT_FILTERS = 'gri'
+DEFAULT_SURVEYS = ['PS1','SDSS']
+DEFAULT_INSTRUMENTS = 'all'
 
 logger = logging.getLogger(__name__)
 
 @dramatiq.actor(max_retries=0)
-def search_templates_and_update_snex1(_targets_list, _filters, _surveys, _instruments, _wrapped_session):
+def search_templates_and_update_snex1(_targets_list, _wrapped_session, _filters=DEFAULT_FILTERS, _surveys=DEFAULT_SURVEYS, _instruments=DEFAULT_INSTRUMENTS):
 
     if _wrapped_session:
         db_session = _wrapped_session
@@ -58,7 +61,7 @@ def search_templates_and_update_snex1(_targets_list, _filters, _surveys, _instru
         else:
             t = Target.objects.get(id=target_id)
 
-            s = template_query(t.objname, t.ra, t.dec, _filters, _instruments)
+            s = template_query(t.name, t.ra, t.dec, _filters, _instruments)
 
             if 'PS1' in _surveys:
                 s.search_for_PS1()

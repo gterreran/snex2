@@ -563,6 +563,7 @@ DRAMATIQ_BROKER = {
         "django_dramatiq.middleware.DbConnectionsMiddleware",
     ]
 }
+DRAMATIQ_AUTODISCOVER_MODULES = ["run_template_search"] 
 
 if DEBUG:
     INTERNAL_IPS = [
